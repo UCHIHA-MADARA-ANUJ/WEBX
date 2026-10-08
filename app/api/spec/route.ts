@@ -1,0 +1,162 @@
+import { AWARDS, FAQ, IMPACT, SITE, TEAM, TIMELINE } from "@/lib/content/site";
+import { ARCH_EDGES, ARCH_NODES, CAPABILITIES, CYCLE, MODES } from "@/lib/content/system";
+import { BOM, PCB_LAYERS, POWER_BUDGET } from "@/lib/content/hardware";
+import { PLANTS } from "@/lib/content/plants";
+import { CODE_FILES } from "@/lib/content/firmware";
+import { inr, round } from "@/lib/utils";
+
+export const dynamic = "force-dynamic";
+
+/** Generates the full technical sheet as markdown, straight from site content. */
+export async function GET() {
+  const generated = new Date().toISOString();
+  const totalCost = BOM.reduce((sum, item) => sum + item.costInr * item.qty, 0);
+  const draw = POWER_BUDGET.reduce((sum, item) => sum + item.currentMa * item.duty, 0);
+
+  const lines: string[] = [
+    `# ${SITE.name} — Technical System Sheet`,
+    "",
+    `> ${SITE.tagline} ${SITE.summary}`,
+    "",
+    `| field | value |`,
+    `| --- | --- |`,
+    `| Edition | ${SITE.edition} (${SITE.version}) |`,
+    `| Location | ${SITE.location} · ${SITE.coordinates.lat} ${SITE.coordinates.lon} |`,
+    `| Established | ${SITE.founded} |`,
+    `| Status | ${SITE.status} |`,
+    `| Repository | ${SITE.repo} |`,
+    `| Generated | ${generated} |`,
+    "",
+    "> **Data honesty notice** — telemetry rendered on the compendium is a deterministic simulation of the pod schema.",
+    "> It is labelled as such wherever it appears. No figures on the site are extrapolated without saying so.",
+    "",
+    "---",
+    "",
+    "## 1 · Architecture",
+    "",
+    "The cloud is deliberately outside the control path: actuation is local, observability is remote.",
+    "",
+    "### Blocks",
+    "",
+    `| block | kind | interface | spec |`,
+    `| --- | --- | --- | --- |`,
+    ...ARCH_NODES.map((node) => `| ${node.title} | ${node.kind} | ${node.code} | ${node.specs[0]} |`),
+    "",
+    "### Links",
+    "",
+    `| from | to | class | signal |`,
+    `| --- | --- | --- | --- |`,
+    ...ARCH_EDGES.map((edge) => `| ${edge.from} | ${edge.to} | ${edge.kind} | ${edge.label ?? "—"} |`),
+    "",
+    "## 2 · Autonomous behaviours",
+    "",
+    ...CAPABILITIES.flatMap((capability) => [
+      `### ${capability.title}`,
+      "",
+      capability.body,
+      "",
+      `- measured: ${capability.metric} ${capability.unit}`,
+      `- implementation: ${capability.detail}`,
+      "",
+    ]),
+    "## 3 · Operating modes",
+    "",
+    ...MODES.flatMap((mode) => [
+      `### ${mode.label} — ${mode.headline}`,
+      "",
+      mode.body,
+      "",
+      ...mode.features.map((feature) => `- ${feature}`),
+      "",
+    ]),
+    "## 4 · Hardware",
+    "",
+    `Bill of materials — ${BOM.length} line items, ${inr(totalCost)} total.`,
+    "",
+    `| item | part | interface | qty | unit cost |`,
+    `| --- | --- | --- | --- | --- |`,
+    ...BOM.map((item) => `| ${item.name} | ${item.part} | ${item.iface} | ${item.qty} | ${inr(item.costInr)} |`),
+    "",
+    "### Power budget (duty averaged)",
+    "",
+    `| subsystem | draw | duty | note |`,
+    `| --- | --- | --- | --- |`,
+    ...POWER_BUDGET.map(
+      (item) => `| ${item.label} | ${item.currentMa} mA | ${round(item.duty * 100, 1)}% | ${item.note} |`,
+    ),
+    "",
+    `Duty-averaged total: **${round(draw, 1)} mA** at 5 V ≈ ${round((draw / 1000) * 5, 2)} W.`,
+    "",
+    "### PCB stack-up",
+    "",
+    ...PCB_LAYERS.map((layer) => `- **${layer.name}** — ${layer.note}`),
+    "",
+    "## 5 · Firmware",
+    "",
+    ...CODE_FILES.flatMap((file) => [`- **${file.name}** (${file.meta}) — ${file.blurb}`]),
+    "",
+    "### Operating cycle",
+    "",
+    ...CYCLE.flatMap((step) => [
+      `**${step.time} · ${step.title}** — ${step.body}`,
+      "",
+      "```",
+      ...step.log,
+      "```",
+      "",
+    ]),
+    "## 6 · Specimen database",
+    "",
+    `| specimen | botanical | moisture band | burst | temp | light | npk | cycle | difficulty |`,
+    `| --- | --- | --- | --- | --- | --- | --- | --- | --- |`,
+    ...PLANTS.map(
+      (plant) =>
+        `| ${plant.name} | ${plant.botanical} | ${plant.window[0]}–${plant.window[2]}% | ${plant.burstMs / 1000}s | ${plant.tempC[0]}–${plant.tempC[1]}°C | ${plant.lightHours}h | ${plant.npk} | ${plant.cycleWeeks}w | ${plant.difficulty}/5 |`,
+    ),
+    "",
+    "## 7 · Journey",
+    "",
+    ...TIMELINE.flatMap((milestone) => [`- **${milestone.date} — ${milestone.title}** (${milestone.status}): ${milestone.body}`]),
+    "",
+    "## 8 · Measured impact",
+    "",
+    `| metric | value | basis |`,
+    `| --- | --- | --- |`,
+    ...IMPACT.map((stat) => `| ${stat.label} | ${stat.value}${stat.suffix ?? ""} | ${stat.caption} |`),
+    "",
+    "## 9 · Recognition",
+    "",
+    ...AWARDS.flatMap((award) => [`- **${award.title}** — ${award.body} (${award.date})`]),
+    "",
+    "## 10 · Team",
+    "",
+    ...TEAM.flatMap((member) => [
+      `### ${member.name} — ${member.role}`,
+      "",
+      member.focus,
+      "",
+      ...member.contributions.map((item) => `- ${item}`),
+      "",
+      `> ${member.quote}`,
+      "",
+    ]),
+    "## 11 · Engineering FAQ",
+    "",
+    ...FAQ.flatMap((item) => [`### ${item.q}`, "", item.a, ""]),
+    "---",
+    "",
+    `Generated by the compendium at ${SITE.repo}.`,
+    `Contact: ${SITE.contactEmail}`,
+    "",
+  ];
+
+  const body = lines.join("\n");
+
+  return new Response(body, {
+    headers: {
+      "content-type": "text/markdown; charset=utf-8",
+      "content-disposition": 'attachment; filename="verde-system-spec.md"',
+      "cache-control": "no-store",
+    },
+  });
+}
