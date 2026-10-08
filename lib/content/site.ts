@@ -72,6 +72,8 @@ export type Member = {
   stack: { label: string; value: number }[];
   quote: string;
   accent: string;
+  /** Only real profiles go in here — an absent key renders no icon. */
+  links: { github?: string; linkedin?: string; x?: string };
 };
 
 export const TEAM: Member[] = [
@@ -102,6 +104,7 @@ export const TEAM: Member[] = [
     ],
     quote: "The hard part was never the code. It was making a 4 MB chip behave like a lab instrument.",
     accent: "#3fe08c",
+    links: { github: "https://github.com/UCHIHA-MADARA-ANUJ" },
   },
   {
     id: "aarav",
@@ -130,6 +133,7 @@ export const TEAM: Member[] = [
     ],
     quote: "A pump pulling 1.5 A will reset your MCU on the first hot day if you don't respect the ground path.",
     accent: "#5fe3d6",
+    links: { github: "https://github.com/UCHIHA-MADARA-ANUJ" },
   },
 ];
 

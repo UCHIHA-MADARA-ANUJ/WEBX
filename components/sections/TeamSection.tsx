@@ -101,24 +101,28 @@ export function TeamSection() {
               </blockquote>
 
               <div className="mt-5 flex items-center gap-2 border-t border-line pt-4">
-                <a
-                  href={SITE.repo}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="flex h-8 w-8 items-center justify-center rounded-lg border border-line text-sage transition-colors hover:border-chloro/40 hover:text-chloro"
-                  aria-label={`${member.name} on GitHub`}
-                >
-                  <GithubMark width={14} height={14} />
-                </a>
-                <a
-                  href="https://www.linkedin.com"
-                  target="_blank"
-                  rel="noreferrer"
-                  className="flex h-8 w-8 items-center justify-center rounded-lg border border-line text-sage transition-colors hover:border-chloro/40 hover:text-chloro"
-                  aria-label={`${member.name} on LinkedIn`}
-                >
-                  <LinkedinMark width={14} height={14} />
-                </a>
+                {member.links.github ? (
+                  <a
+                    href={member.links.github}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="flex h-8 w-8 items-center justify-center rounded-lg border border-line text-sage transition-colors hover:border-chloro/40 hover:text-chloro"
+                    aria-label={`${member.name} on GitHub`}
+                  >
+                    <GithubMark width={14} height={14} />
+                  </a>
+                ) : null}
+                {member.links.linkedin ? (
+                  <a
+                    href={member.links.linkedin}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="flex h-8 w-8 items-center justify-center rounded-lg border border-line text-sage transition-colors hover:border-chloro/40 hover:text-chloro"
+                    aria-label={`${member.name} on LinkedIn`}
+                  >
+                    <LinkedinMark width={14} height={14} />
+                  </a>
+                ) : null}
                 <a
                   href={`mailto:${SITE.contactEmail}?subject=${encodeURIComponent(`Project Verde — for ${member.name}`)}`}
                   className="ml-auto inline-flex items-center gap-2 font-mono text-[10.5px] uppercase tracking-[0.14em] text-sage transition-colors hover:text-chloro"
