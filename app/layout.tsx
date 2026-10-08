@@ -1,9 +1,10 @@
 import type { Metadata, Viewport } from "next";
 import { fontVariables } from "@/lib/fonts";
-import { SITE } from "@/lib/content/site";
+import { FAQ, SITE } from "@/lib/content/site";
 import "./globals.css";
 
 export const metadata: Metadata = {
+  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL ?? "https://verde-compendium.vercel.app"),
   title: {
     default: `${SITE.name} — ${SITE.edition}`,
     template: `%s · ${SITE.name}`,
@@ -49,10 +50,51 @@ export const viewport: Viewport = {
   maximumScale: 5,
 };
 
+/** Structured data so search engines read this as a technical project, not a landing page. */
+const structuredData = {
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "TechArticle",
+      headline: `${SITE.name} — ${SITE.edition}`,
+      description: SITE.summary,
+      inLanguage: "en-IN",
+      datePublished: "2024-06-01",
+      dateModified: new Date().toISOString().slice(0, 10),
+      keywords: "autonomous irrigation, ESP32, Firebase, TensorFlow Lite, vertical farming",
+      author: [
+        { "@type": "Person", name: "Anuj Phulera", jobTitle: "Project lead · software architect" },
+        { "@type": "Person", name: "Aarav Choudhary", jobTitle: "Hardware node · PCB design" },
+      ],
+      about: {
+        "@type": "Project",
+        name: SITE.name,
+        description: SITE.summary,
+        locationCreated: { "@type": "Place", name: SITE.location },
+      },
+    },
+    {
+      "@type": "FAQPage",
+      mainEntity: FAQ.map((item) => ({
+        "@type": "Question",
+        name: item.q,
+        acceptedAnswer: { "@type": "Answer", text: item.a },
+      })),
+    },
+  ],
+};
+
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" data-calm="false" className={fontVariables} suppressHydrationWarning>
-      <body className="bg-void text-bone antialiased">{children}</body>
+      <body className="bg-void text-bone antialiased">
+        {children}
+        <script
+          type="application/ld+json"
+          // Content is authored, not user-supplied — safe to inline.
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }}
+        />
+      </body>
     </html>
   );
 }
